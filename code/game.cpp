@@ -13,8 +13,24 @@ global_var BITMAPINFO BitMapInfo;
 global_var void *BitmapMemory;
 global_var int BitmapWidth;
 global_var int BitmapHeight;
+global_var int BytesPerPixel = 4;
 
+internal void RenderTest(int XOffset, int YOffset){
+    int Pitch = BitmapWidth*BytesPerPixel;
+    uint8_t *Row = (uint8_t *)BitmapMemory;
 
+    for(int y = 0; y < BitmapHeight; y++){
+        uint32_t *Pixel = (uint32_t *)Row;
+        for(int x = 0; x < BitmapWidth; x++){
+            
+            uint8_t Blue = (x + XOffset);
+            uint8_t Green = (y + YOffset);
+            *Pixel++ = ((Green << 8)  | Blue);
+        }
+
+        Row += Pitch;
+    }
+}
 
 internal void ResizeDIBSection(int Width, int Height){
 
@@ -32,23 +48,9 @@ internal void ResizeDIBSection(int Width, int Height){
     BitMapInfo.bmiHeader.biBitCount = 32;
     BitMapInfo.bmiHeader.biCompression = BI_RGB;
 
-    int BytesPerPixel = 4;
     int BitmapMemorySize = (Width * Height) * BytesPerPixel;
 
     BitmapMemory = VirtualAlloc(0, BitmapMemorySize, MEM_COMMIT, PAGE_READWRITE);
-
-    int Pitch = Width*BytesPerPixel;
-    uint8_t *Row = (uint8_t *)BitmapMemory;
-
-    for(int y = 0; y < BitmapHeight; y++){
-        uint32_t *Pixel = (uint32_t *)Row;
-        for(int x = 0; x < BitmapWidth; x++){
-
-            Pixel++;
-        }
-
-        Row += Pitch
-    }
 
 }
 
@@ -136,7 +138,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     WindowClass.lpszClassName = "GameTestWindowClass";
 
     if(RegisterClass(&WindowClass)){
-        HWND WindowHandle = CreateWindowEx(
+        HWND Window = CreateWindowEx(
                         0,
                         WindowClass.lpszClassName,
                         "Game Test",
@@ -149,28 +151,35 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                         0,
                         hInstance,
                         0);
-        if(WindowHandle){
+        if(Window){
             Running = true;
+            int XOffset = 0;
+            int YOffset = 0;
+            
             while(Running){
                 MSG Message;
-                BOOL MessageResult = GetMessage(&Message, 0, 0,0);
-                    if(MessageResult > 0){
-                        TranslateMessage(&Message);
-                        DispatchMessage(&Message);
+
+                while(PeekMessage(&Message, 0, 0,0, PM_REMOVE)){
+                    if(Message.message == WM_QUIT){
+                        Running = false;
                     }
-                    else{
-                        break;
-                    }
+                    TranslateMessage(&Message);
+                    DispatchMessage(&Message);
                 }
+                RenderTest(XOffset, YOffset);
+                HDC DeviceContext = GetDC(Window); 
+                RECT ClientRect;
+                GetClientRect(Window, &ClientRect);
+                int WindowWidth = ClientRect.right - ClientRect.left;
+                int WindowHeight = ClientRect.bottom - ClientRect.top;
+                WindowUpdate(DeviceContext, &ClientRect,0, 0, WindowWidth, WindowHeight);
+                ReleaseDC(Window, DeviceContext);
+                XOffset++;
             }
-            else{
-                return 1;
-            }
+        }
+        else{
+            return 1;
+        }
+        return 0;
     }
-    else{
-        return 1;
-    }
-
-
-    return 0;
 }
