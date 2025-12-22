@@ -1,10 +1,176 @@
 #include <windows.h>
+#include <stdint.h>
 
-int __clrcall WinMain(
-    HINSTANCE hInstance,
-    HINSTANCE hPrevInstance,
-    LPSTR     lpCmdLine,
-    int       nShowCmd
-){
+#define local_persist static 
+#define global_var static 
+#define internal static 
+
+
+
+global_var bool Running;
+
+global_var BITMAPINFO BitMapInfo;
+global_var void *BitmapMemory;
+global_var int BitmapWidth;
+global_var int BitmapHeight;
+
+
+
+internal void ResizeDIBSection(int Width, int Height){
+
+    if(BitmapMemory){
+        VirtualFree(BitmapMemory, 0, MEM_RELEASE);
+    }
+
+    BitmapWidth = Width;
+    BitmapHeight = Height;
+
+    BitMapInfo.bmiHeader.biSize = sizeof(BitMapInfo.bmiHeader);
+    BitMapInfo.bmiHeader.biWidth = BitmapWidth;
+    BitMapInfo.bmiHeader.biHeight = -BitmapHeight;
+    BitMapInfo.bmiHeader.biPlanes = 1;
+    BitMapInfo.bmiHeader.biBitCount = 32;
+    BitMapInfo.bmiHeader.biCompression = BI_RGB;
+
+    int BytesPerPixel = 4;
+    int BitmapMemorySize = (Width * Height) * BytesPerPixel;
+
+    BitmapMemory = VirtualAlloc(0, BitmapMemorySize, MEM_COMMIT, PAGE_READWRITE);
+
+    int Pitch = Width*BytesPerPixel;
+    uint8_t *Row = (uint8_t *)BitmapMemory;
+
+    for(int y = 0; y < BitmapHeight; y++){
+        uint32_t *Pixel = (uint32_t *)Row;
+        for(int x = 0; x < BitmapWidth; x++){
+
+            Pixel++;
+        }
+
+        Row += Pitch
+    }
+
+}
+
+internal void WindowUpdate(HDC DeviceContext, RECT *WindowRect, int X, int Y, int Width, int Height){
+
+    int WindowWidth = WindowRect->right - WindowRect->left;
+    int WindowHeight = WindowRect->bottom - WindowRect->top;
+
+    StretchDIBits(DeviceContext, 
+            0, 0, BitmapWidth, BitmapHeight,
+            0, 0, WindowWidth, WindowHeight,
+            BitmapMemory,
+            &BitMapInfo,
+            DIB_RGB_COLORS, SRCCOPY);
+
+}
+
+LRESULT CALLBACK MainWindowCallBack(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam)
+{
+    LRESULT Result = 0;
+
+    switch (Message)
+    {
+        case WM_SIZE:
+        {
+            RECT ClientRect;
+            GetClientRect(Window, &ClientRect);
+            int Height = ClientRect.bottom - ClientRect.top;
+            int Width = ClientRect.right - ClientRect.left;
+            ResizeDIBSection(Width, Height);
+            OutputDebugStringA("WM_SIZE\n");
+        }break;
+        
+        case WM_DESTROY:
+        {
+            OutputDebugStringA("WM_DESTROY\n");
+            Running = false;
+        }break;
+        
+        case WM_CLOSE:
+        {
+            Running = false;
+            OutputDebugStringA("WM_CLOSE\n");
+        }break;
+
+        case WM_ACTIVATEAPP:
+        {
+            OutputDebugStringA("WM_ACTIVATEAPP\n");
+        } break;
+
+        case WM_PAINT:{
+
+            PAINTSTRUCT Paint;
+
+            RECT ClientRect;
+            GetClientRect(Window, &ClientRect);
+            HDC DeviceContext = BeginPaint(Window, &Paint);
+            int X = Paint.rcPaint.left;
+            int Y = Paint.rcPaint.top;
+            int Height = Paint.rcPaint.bottom - Paint.rcPaint.top;
+            int Width = Paint.rcPaint.right - Paint.rcPaint.left;
+            WindowUpdate(DeviceContext, &ClientRect,X, Y, Width, Height);
+            EndPaint(Window, &Paint);
+
+        }
+
+        default:
+        {
+//          OutputDebugStringA("default\n");
+            Result = DefWindowProc(Window, Message, WParam, LParam);
+        }break;
+    }
+    return(Result);
+}
+
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+{
+
+    WNDCLASS WindowClass = {};
+
+    WindowClass.style = CS_OWNDC|CS_HREDRAW|CS_VREDRAW;
+    WindowClass.lpfnWndProc = MainWindowCallBack;
+    WindowClass.hInstance = hInstance;
+    WindowClass.lpszClassName = "GameTestWindowClass";
+
+    if(RegisterClass(&WindowClass)){
+        HWND WindowHandle = CreateWindowEx(
+                        0,
+                        WindowClass.lpszClassName,
+                        "Game Test",
+                        WS_OVERLAPPEDWINDOW|WS_VISIBLE,
+                        CW_USEDEFAULT,
+                        CW_USEDEFAULT,
+                        CW_USEDEFAULT,
+                        CW_USEDEFAULT,
+                        0,
+                        0,
+                        hInstance,
+                        0);
+        if(WindowHandle){
+            Running = true;
+            while(Running){
+                MSG Message;
+                BOOL MessageResult = GetMessage(&Message, 0, 0,0);
+                    if(MessageResult > 0){
+                        TranslateMessage(&Message);
+                        DispatchMessage(&Message);
+                    }
+                    else{
+                        break;
+                    }
+                }
+            }
+            else{
+                return 1;
+            }
+    }
+    else{
+        return 1;
+    }
+
+
     return 0;
 }
