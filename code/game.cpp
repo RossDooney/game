@@ -54,10 +54,10 @@ internal void ResizeDIBSection(int Width, int Height){
 
 }
 
-internal void WindowUpdate(HDC DeviceContext, RECT *WindowRect, int X, int Y, int Width, int Height){
+internal void WindowUpdate(HDC DeviceContext, RECT WindowRect, int X, int Y, int Width, int Height){
 
-    int WindowWidth = WindowRect->right - WindowRect->left;
-    int WindowHeight = WindowRect->bottom - WindowRect->top;
+    int WindowWidth = WindowRect.right - WindowRect.left;
+    int WindowHeight = WindowRect.bottom - WindowRect.top;
 
     StretchDIBits(DeviceContext, 
             0, 0, BitmapWidth, BitmapHeight,
@@ -112,7 +112,7 @@ LRESULT CALLBACK MainWindowCallBack(HWND Window, UINT Message, WPARAM WParam, LP
             int Y = Paint.rcPaint.top;
             int Height = Paint.rcPaint.bottom - Paint.rcPaint.top;
             int Width = Paint.rcPaint.right - Paint.rcPaint.left;
-            WindowUpdate(DeviceContext, &ClientRect,X, Y, Width, Height);
+            WindowUpdate(DeviceContext, ClientRect,X, Y, Width, Height);
             EndPaint(Window, &Paint);
 
         }
@@ -132,7 +132,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     WNDCLASS WindowClass = {};
 
-    WindowClass.style = CS_OWNDC|CS_HREDRAW|CS_VREDRAW;
+    WindowClass.style = CS_HREDRAW|CS_VREDRAW;
     WindowClass.lpfnWndProc = MainWindowCallBack;
     WindowClass.hInstance = hInstance;
     WindowClass.lpszClassName = "GameTestWindowClass";
@@ -172,7 +172,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 GetClientRect(Window, &ClientRect);
                 int WindowWidth = ClientRect.right - ClientRect.left;
                 int WindowHeight = ClientRect.bottom - ClientRect.top;
-                WindowUpdate(DeviceContext, &ClientRect,0, 0, WindowWidth, WindowHeight);
+                WindowUpdate(DeviceContext, ClientRect,0, 0, WindowWidth, WindowHeight);
                 ReleaseDC(Window, DeviceContext);
                 XOffset++;
             }
