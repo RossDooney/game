@@ -5,23 +5,28 @@
 #define global_var static 
 #define internal static 
 
-
-
 global_var bool Running;
 
-global_var BITMAPINFO BitMapInfo;
-global_var void *BitmapMemory;
-global_var int BitmapWidth;
-global_var int BitmapHeight;
-global_var int BytesPerPixel = 4;
+struct offscreen_buffer{
+    BITMAPINFO Info;
+    void *Memory;
+    int Width;
+    int Height;
+    int BytesPerPixel;   
+}
 
-internal void RenderTest(int XOffset, int YOffset){
-    int Pitch = BitmapWidth*BytesPerPixel;
-    uint8_t *Row = (uint8_t *)BitmapMemory;
 
-    for(int y = 0; y < BitmapHeight; y++){
+
+internal void RenderTest(offscreen_buffer Buffer, int XOffset, int YOffset){
+    int Width = Buffer.Width;
+    int Height = Buffer.Height;
+
+    int Pitch = Width*Buffer.BytesPerPixel;
+    uint8_t *Row = (uint8_t *)Buffer->Memory;
+
+    for(int y = 0; y < Height; y++){
         uint32_t *Pixel = (uint32_t *)Row;
-        for(int x = 0; x < BitmapWidth; x++){
+        for(int x = 0; x < pWidth; x++){
             
             uint8_t Blue = (x + XOffset);
             uint8_t Green = (y + YOffset);
