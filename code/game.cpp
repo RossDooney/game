@@ -12,63 +12,58 @@ struct offscreen_buffer{
     void *Memory;
     int Width;
     int Height;
+    int Pitch;
     int BytesPerPixel;   
-}
+};
 
 
 
 internal void RenderTest(offscreen_buffer Buffer, int XOffset, int YOffset){
-    int Width = Buffer.Width;
-    int Height = Buffer.Height;
+    uint8_t *Row = (uint8_t *)Buffer.Memory;
 
-    int Pitch = Width*Buffer.BytesPerPixel;
-    uint8_t *Row = (uint8_t *)Buffer->Memory;
-
-    for(int y = 0; y < Height; y++){
+    for(int y = 0; y < Buffer.Height; y++){
         uint32_t *Pixel = (uint32_t *)Row;
-        for(int x = 0; x < pWidth; x++){
+        for(int x = 0; x < Buffer.Width; x++){
             
             uint8_t Blue = (x + XOffset);
             uint8_t Green = (y + YOffset);
             *Pixel++ = ((Green << 8)  | Blue);
         }
 
-        Row += Pitch;
+        Row += Buffer.Pitch;
     }
 }
 
-internal void ResizeDIBSection(int Width, int Height){
+internal void ResizeDIBSection(offscreen_buffer *Buffer, int Width, int Height){
 
-    if(BitmapMemory){
-        VirtualFree(BitmapMemory, 0, MEM_RELEASE);
+    if(Buffer->Memory){
+        VirtualFree(Buffer->Memory, 0, MEM_RELEASE);
     }
 
-    BitmapWidth = Width;
-    BitmapHeight = Height;
+    Buffer->Info.bmiHeader.biSize = sizeof(Buffer->Info.bmiHeader);
+    Buffer->Info.bmiHeader.biWidth = Width;
+    Buffer->Info.bmiHeader.biHeight = Height;
+    Buffer->Info.bmiHeader.biPlanes = 1;
+    Buffer->Info.bmiHeader.biBitCount = 32;
+    Buffer->Info.bmiHeader.biCompression = BI_RGB;
 
-    BitMapInfo.bmiHeader.biSize = sizeof(BitMapInfo.bmiHeader);
-    BitMapInfo.bmiHeader.biWidth = BitmapWidth;
-    BitMapInfo.bmiHeader.biHeight = -BitmapHeight;
-    BitMapInfo.bmiHeader.biPlanes = 1;
-    BitMapInfo.bmiHeader.biBitCount = 32;
-    BitMapInfo.bmiHeader.biCompression = BI_RGB;
+    int BitmapMemorySize = (Width * Height) * Buffer->BytesPerPixel;
 
-    int BitmapMemorySize = (Width * Height) * BytesPerPixel;
-
-    BitmapMemory = VirtualAlloc(0, BitmapMemorySize, MEM_COMMIT, PAGE_READWRITE);
+    Buffer->Memory = VirtualAlloc(0, BitmapMemorySize, MEM_COMMIT, PAGE_READWRITE);
+    Buffer->Pitch = Width*Buffer->BytesPerPixel;
 
 }
 
-internal void WindowUpdate(HDC DeviceContext, RECT WindowRect, int X, int Y, int Width, int Height){
+internal void WindowUpdate(HDC DeviceContext, RECT WindowRect, offscreen_buffer Buffer){
 
     int WindowWidth = WindowRect.right - WindowRect.left;
     int WindowHeight = WindowRect.bottom - WindowRect.top;
 
     StretchDIBits(DeviceContext, 
-            0, 0, BitmapWidth, BitmapHeight,
+            0, 0, Buffer.Width, Buffer.Height,
             0, 0, WindowWidth, WindowHeight,
-            BitmapMemory,
-            &BitMapInfo,
+            Buffer.Memory,
+            &Buffer.Info,
             DIB_RGB_COLORS, SRCCOPY);
 
 }
@@ -157,6 +152,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                         hInstance,
                         0);
         if(Window){
+            offscreen_buffer Buffer;
             Running = true;
             int XOffset = 0;
             int YOffset = 0;
@@ -171,13 +167,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     TranslateMessage(&Message);
                     DispatchMessage(&Message);
                 }
-                RenderTest(XOffset, YOffset);
+                RenderTest(XOffset, YOffset, Buffer);
                 HDC DeviceContext = GetDC(Window); 
                 RECT ClientRect;
                 GetClientRect(Window, &ClientRect);
                 int WindowWidth = ClientRect.right - ClientRect.left;
                 int WindowHeight = ClientRect.bottom - ClientRect.top;
-                WindowUpdate(DeviceContext, ClientRect,0, 0, WindowWidth, WindowHeight);
+                WindowUpdate(DeviceContext, ClientRect, Buffer);
                 ReleaseDC(Window, DeviceContext);
                 XOffset++;
             }
