@@ -5,8 +5,6 @@
 #define global_var static 
 #define internal static 
 
-global_var bool Running;
-
 struct offscreen_buffer{
     BITMAPINFO Info;
     void *Memory;
@@ -16,7 +14,8 @@ struct offscreen_buffer{
     int BytesPerPixel;   
 };
 
-
+global_var bool Running;
+global_var offscreen_buffer GlobalBuffer;
 
 internal void RenderTest(offscreen_buffer Buffer, int XOffset, int YOffset){
     uint8_t *Row = (uint8_t *)Buffer.Memory;
@@ -40,9 +39,13 @@ internal void ResizeDIBSection(offscreen_buffer *Buffer, int Width, int Height){
         VirtualFree(Buffer->Memory, 0, MEM_RELEASE);
     }
 
+    Buffer->Height = Height;
+    Buffer->Width = Width;
+    Buffer->BytesPerPixel = 4;
+
     Buffer->Info.bmiHeader.biSize = sizeof(Buffer->Info.bmiHeader);
-    Buffer->Info.bmiHeader.biWidth = Width;
-    Buffer->Info.bmiHeader.biHeight = Height;
+    Buffer->Info.bmiHeader.biWidth = Buffer->Width;
+    Buffer->Info.bmiHeader.biHeight = Buffer->Height;
     Buffer->Info.bmiHeader.biPlanes = 1;
     Buffer->Info.bmiHeader.biBitCount = 32;
     Buffer->Info.bmiHeader.biCompression = BI_RGB;
@@ -80,7 +83,7 @@ LRESULT CALLBACK MainWindowCallBack(HWND Window, UINT Message, WPARAM WParam, LP
             GetClientRect(Window, &ClientRect);
             int Height = ClientRect.bottom - ClientRect.top;
             int Width = ClientRect.right - ClientRect.left;
-            ResizeDIBSection(Width, Height);
+            ResizeDIBSection(&GlobalBuffer, Width, Height);
             OutputDebugStringA("WM_SIZE\n");
         }break;
         
@@ -112,7 +115,7 @@ LRESULT CALLBACK MainWindowCallBack(HWND Window, UINT Message, WPARAM WParam, LP
             int Y = Paint.rcPaint.top;
             int Height = Paint.rcPaint.bottom - Paint.rcPaint.top;
             int Width = Paint.rcPaint.right - Paint.rcPaint.left;
-            WindowUpdate(DeviceContext, ClientRect,X, Y, Width, Height);
+            WindowUpdate(DeviceContext, ClientRect, GlobalBuffer);
             EndPaint(Window, &Paint);
 
         }
@@ -152,7 +155,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                         hInstance,
                         0);
         if(Window){
-            offscreen_buffer Buffer;
             Running = true;
             int XOffset = 0;
             int YOffset = 0;
@@ -167,13 +169,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     TranslateMessage(&Message);
                     DispatchMessage(&Message);
                 }
-                RenderTest(XOffset, YOffset, Buffer);
+                RenderTest(GlobalBuffer, XOffset, YOffset); 
                 HDC DeviceContext = GetDC(Window); 
                 RECT ClientRect;
                 GetClientRect(Window, &ClientRect);
                 int WindowWidth = ClientRect.right - ClientRect.left;
                 int WindowHeight = ClientRect.bottom - ClientRect.top;
-                WindowUpdate(DeviceContext, ClientRect, Buffer);
+                WindowUpdate(DeviceContext, ClientRect, GlobalBuffer);
                 ReleaseDC(Window, DeviceContext);
                 XOffset++;
             }

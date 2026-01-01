@@ -1,2 +1,5 @@
 .vscode/
-builld/
+code/builld/
+code/Debug/
+code/game/
+code/x64/
