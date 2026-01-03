@@ -3,3 +3,7 @@ code/builld/
 code/Debug/
 code/game/
 code/x64/
+.vs/
+code/.vs
+game.vcx*
+game.sln
