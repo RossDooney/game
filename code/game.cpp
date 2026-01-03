@@ -17,6 +17,22 @@ struct offscreen_buffer{
 global_var bool Running;
 global_var offscreen_buffer GlobalBuffer;
 
+struct window_dimension{
+    int Width;
+    int Height;
+};
+
+window_dimension GetWindowDimension(HWND Window){
+    window_dimension Result;
+
+    RECT ClientRect;
+    GetClientRect(Window, &ClientRect);
+    Result.Width = ClientRect.right - ClientRect.left;
+    Result.Height = ClientRect.bottom - ClientRect.top;
+
+    return(Result);            
+}
+
 internal void RenderTest(offscreen_buffer Buffer, int XOffset, int YOffset){
     uint8_t *Row = (uint8_t *)Buffer.Memory;
 
@@ -57,14 +73,12 @@ internal void ResizeDIBSection(offscreen_buffer *Buffer, int Width, int Height){
 
 }
 
-internal void WindowUpdate(HDC DeviceContext, RECT WindowRect, offscreen_buffer Buffer){
+internal void WindowUpdate(HDC DeviceContext, int WindowWidth, int WindowHeight, offscreen_buffer Buffer){
 
-    int WindowWidth = WindowRect.right - WindowRect.left;
-    int WindowHeight = WindowRect.bottom - WindowRect.top;
-
+   
     StretchDIBits(DeviceContext, 
-            0, 0, Buffer.Width, Buffer.Height,
             0, 0, WindowWidth, WindowHeight,
+            0, 0, Buffer.Width, Buffer.Height,
             Buffer.Memory,
             &Buffer.Info,
             DIB_RGB_COLORS, SRCCOPY);
@@ -79,11 +93,6 @@ LRESULT CALLBACK MainWindowCallBack(HWND Window, UINT Message, WPARAM WParam, LP
     {
         case WM_SIZE:
         {
-            RECT ClientRect;
-            GetClientRect(Window, &ClientRect);
-            int Height = ClientRect.bottom - ClientRect.top;
-            int Width = ClientRect.right - ClientRect.left;
-            ResizeDIBSection(&GlobalBuffer, Width, Height);
             OutputDebugStringA("WM_SIZE\n");
         }break;
         
@@ -108,14 +117,13 @@ LRESULT CALLBACK MainWindowCallBack(HWND Window, UINT Message, WPARAM WParam, LP
 
             PAINTSTRUCT Paint;
 
-            RECT ClientRect;
-            GetClientRect(Window, &ClientRect);
+            window_dimension Dim = GetWindowDimension(Window);
             HDC DeviceContext = BeginPaint(Window, &Paint);
             int X = Paint.rcPaint.left;
             int Y = Paint.rcPaint.top;
             int Height = Paint.rcPaint.bottom - Paint.rcPaint.top;
             int Width = Paint.rcPaint.right - Paint.rcPaint.left;
-            WindowUpdate(DeviceContext, ClientRect, GlobalBuffer);
+            WindowUpdate(DeviceContext, Dim.Width, Dim.Height, GlobalBuffer);
             EndPaint(Window, &Paint);
 
         }
@@ -134,6 +142,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 {
 
     WNDCLASS WindowClass = {};
+
+    ResizeDIBSection(&GlobalBuffer, 1280, 720);
+    
+   
 
     WindowClass.style = CS_HREDRAW|CS_VREDRAW;
     WindowClass.lpfnWndProc = MainWindowCallBack;
@@ -171,11 +183,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 }
                 RenderTest(GlobalBuffer, XOffset, YOffset); 
                 HDC DeviceContext = GetDC(Window); 
-                RECT ClientRect;
-                GetClientRect(Window, &ClientRect);
-                int WindowWidth = ClientRect.right - ClientRect.left;
-                int WindowHeight = ClientRect.bottom - ClientRect.top;
-                WindowUpdate(DeviceContext, ClientRect, GlobalBuffer);
+                window_dimension Dim = GetWindowDimension(Window);
+                WindowUpdate(DeviceContext, Dim.Width, Dim.Height, GlobalBuffer);
                 ReleaseDC(Window, DeviceContext);
                 XOffset++;
             }
