@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <stdint.h>
+#include <Xinput.h>
 
 #define local_persist static 
 #define global_var static 
@@ -181,6 +182,32 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     TranslateMessage(&Message);
                     DispatchMessage(&Message);
                 }
+
+                for(DWORD ControllerIndex = 0;  ControllerIndex < XUSER_MAX_COUNT; ControllerIndex++){
+                        XINPUT_STATE ControllerState;
+                        if(XInputGetState(ControllerIndex, &ControllerIndex) == ERROR_SUCCESS){
+                            XINPUT_GAMEPAD *Pad = &ControllerState.Gamepad;
+                            bool Up = (Pad->wButtons & XINPUT_GAMEPAD_DPAD_UP);
+                            bool Down = (Pad->wButtons & XINPUT_GAMEPAD_DPAD_DOWN);
+                            bool Left = (Pad->wButtons & XINPUT_GAMEPAD_DPAD_LEFT);
+                            bool Right = (Pad->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT);
+                            bool Start = (Pad->wButtons & XINPUT_GAMEPAD_START);
+                            bool Back = (Pad->wButtons & XINPUT_GAMEPAD_BACK);
+                            bool LeftThumb = (Pad->wButtons & XINPUT_GAMEPAD_LEFT_THUMB);
+                            bool RightThumb = (Pad->wButtons & XINPUT_GAMEPAD_RIGHT_THUMB); 
+                            bool AButton = (Pad->wButtons & XINPUT_GAMEPAD_A);
+                            bool BButton = (Pad->wButtons & XINPUT_GAMEPAD_B);
+                            bool YButton = (Pad->wButtons & XINPUT_GAMEPAD_Y);
+                            bool XButton = (Pad->wButtons & XINPUT_GAMEPAD_X);
+
+                            int16 StickX = Pad->sThumbLX;
+                            int16 StickY = Pad->sThumbLY
+                        }
+                        else{
+                            //controller not plugged in
+                        }
+                    }
+
                 RenderTest(GlobalBuffer, XOffset, YOffset); 
                 HDC DeviceContext = GetDC(Window); 
                 window_dimension Dim = GetWindowDimension(Window);
