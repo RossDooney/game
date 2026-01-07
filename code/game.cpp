@@ -25,7 +25,7 @@ struct window_dimension{
 
 
 #define X_INPUT_GET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex, XINPUT_STATE *pState)
-typedef X_INPUT_GET_STATE(DynXInputGetState);
+typedef X_INPUT_GET_STATE(x_input_get_state);
 X_INPUT_GET_STATE(XInputGetStateStub){
     return(0);
 }
@@ -33,7 +33,7 @@ global_var x_input_get_state *DynXInputGetState = XInputGetStateStub;
 
 
 #define X_INPUT_SET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex, XINPUT_VIBRATION *pVIBRATION)
-typedef X_INPUT_SET_STATE(DynXInputSetState);
+typedef X_INPUT_SET_STATE(x_input_set_state);
 X_INPUT_SET_STATE(XInputSetStateStub){
     return(0);
 }
