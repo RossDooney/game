@@ -23,6 +23,24 @@ struct window_dimension{
     int Height;
 };
 
+
+#define X_INPUT_GET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex, XINPUT_STATE *pState)
+typedef X_INPUT_GET_STATE(DynXInputGetState);
+X_INPUT_GET_STATE(XInputGetStateStub){
+    return(0);
+}
+global_var x_input_get_state *DynXInputGetState = XInputGetStateStub;
+
+
+#define X_INPUT_SET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex, XINPUT_VIBRATION *pVIBRATION)
+typedef X_INPUT_SET_STATE(DynXInputSetState);
+X_INPUT_SET_STATE(XInputSetStateStub){
+    return(0);
+}
+global_var x_input_set_state *DynXInputSetState = XInputSetStateStub;
+
+
+
 window_dimension GetWindowDimension(HWND Window){
     window_dimension Result;
 
@@ -185,7 +203,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
                 for(DWORD ControllerIndex = 0;  ControllerIndex < XUSER_MAX_COUNT; ControllerIndex++){
                         XINPUT_STATE ControllerState;
-                        if(XInputGetState(ControllerIndex, &ControllerState) == ERROR_SUCCESS){
+                        if(DynXInputGetState(ControllerIndex, &ControllerState) == ERROR_SUCCESS){
                             XINPUT_GAMEPAD *Pad = &ControllerState.Gamepad;
                             bool Up = (Pad->wButtons & XINPUT_GAMEPAD_DPAD_UP);
                             bool Down = (Pad->wButtons & XINPUT_GAMEPAD_DPAD_DOWN);
