@@ -185,7 +185,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
                 for(DWORD ControllerIndex = 0;  ControllerIndex < XUSER_MAX_COUNT; ControllerIndex++){
                         XINPUT_STATE ControllerState;
-                        if(XInputGetState(ControllerIndex, &ControllerIndex) == ERROR_SUCCESS){
+                        if(XInputGetState(ControllerIndex, &ControllerState) == ERROR_SUCCESS){
                             XINPUT_GAMEPAD *Pad = &ControllerState.Gamepad;
                             bool Up = (Pad->wButtons & XINPUT_GAMEPAD_DPAD_UP);
                             bool Down = (Pad->wButtons & XINPUT_GAMEPAD_DPAD_DOWN);
@@ -200,8 +200,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                             bool YButton = (Pad->wButtons & XINPUT_GAMEPAD_Y);
                             bool XButton = (Pad->wButtons & XINPUT_GAMEPAD_X);
 
-                            int16 StickX = Pad->sThumbLX;
-                            int16 StickY = Pad->sThumbLY
+                            int16_t StickX = Pad->sThumbLX;
+                            int16_t StickY = Pad->sThumbLY;
                         }
                         else{
                             //controller not plugged in
