@@ -39,7 +39,13 @@ X_INPUT_SET_STATE(XInputSetStateStub){
 }
 global_var x_input_set_state *DynXInputSetState = XInputSetStateStub;
 
-
+internal void LoadXInput(void){
+    HMODULE XINputLibary = LoadLibrary("xinput1_3.dll");
+    if(XINputLibary){
+        DynXInputGetState = (x_input_get_state *)GetProcAddress(XINputLibary, "XInputGetState");
+        DynXInputSetState = (x_input_set_state *)GetProcAddress(XINputLibary, "XInputSetState");
+    }
+}
 
 window_dimension GetWindowDimension(HWND Window){
     window_dimension Result;
@@ -120,7 +126,27 @@ LRESULT CALLBACK MainWindowCallBack(HWND Window, UINT Message, WPARAM WParam, LP
             OutputDebugStringA("WM_DESTROY\n");
             Running = false;
         }break;
-        
+
+        case WM_SYSKEYDOWN:
+        {
+            OutputDebugStringA("Keydown\n");
+        }break;
+
+        case WM_SYSKEYUP:
+        {
+            OutputDebugStringA("KeyUp\n");
+        }break;
+
+        case WM_KEYDOWN:
+        {
+            OutputDebugStringA("Keydown\n");
+        }break;
+
+        case WM_KEYUP:
+        {
+            OutputDebugStringA("KeyUp\n");
+        }break;
+       
         case WM_CLOSE:
         {
             Running = false;
